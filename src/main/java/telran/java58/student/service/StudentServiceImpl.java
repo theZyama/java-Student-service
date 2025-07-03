@@ -40,12 +40,11 @@ public class StudentServiceImpl implements StudentService {
     public StudentDto removeStudent(Long id) {
         Student student = studentRepository.findById(id).orElseThrow(NotFoundException::new);
         studentRepository.deleteById(id);
-        return new StudentDto(student.getId(), student.getName(), student.getScores());
+        return new StudentDto(id, student.getName(), student.getScores());
     }
 
     @Override
     public StudentCredentialsDto updateStudent(Long id, StudentUpdateDto studentUpdateDto) {
-
         Student student = studentRepository.findById(id).orElseThrow(NotFoundException::new);
         if (studentUpdateDto.getName() != null) {
             student.setName(studentUpdateDto.getName());
@@ -53,12 +52,9 @@ public class StudentServiceImpl implements StudentService {
         if (studentUpdateDto.getPassword() != null) {
             student.setPassword(studentUpdateDto.getPassword());
         }
-        Student updatedStudent = studentRepository.save(student);
-        return new StudentCredentialsDto(
-                updatedStudent.getId(),
-                updatedStudent.getName(),
-                updatedStudent.getPassword()
-        );
+        studentRepository.save(student);
+        return new StudentCredentialsDto(student.getId(), student.getName(), student.getPassword());
+
     }
 
     @Override
@@ -66,35 +62,29 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(id).orElseThrow(NotFoundException::new);
         student.addScore(scoreDto.getExamName(), scoreDto.getScore());
         studentRepository.save(student);
+
     }
 
     @Override
     public List<StudentDto> findStudentsByName(String name) {
-        return studentRepository.findByNameIgnoreCase(name)
-                .stream()
-                .map(student -> new StudentDto(
-                        student.getId(),
-                        student.getName(),
-                        student.getScores()
-                )).toList();
+        return studentRepository.findAll().stream()
+                .filter(s -> name.equalsIgnoreCase(s.getName()))
+                .map(s -> new StudentDto(s.getId(), s.getName(), s.getScores()))
+                .toList();
     }
 
     @Override
     public Long countStudentByNames(Set<String> names) {
-        return studentRepository.countByNameInIgnoreCase(names);
+        return studentRepository.findAll().stream()
+                .filter(s -> names.contains(s.getName()))
+                .count();
     }
 
     @Override
     public List<StudentDto> findStudentsByExamNameMinScore(String examName, Integer minScore) {
-
-        return studentRepository.findByExamAndScoreGreaterThan(examName, minScore)
-                .stream()
-                .map(student -> new StudentDto(
-                        student.getId(),
-                        student.getName(),
-                        student.getScores()
-                ))
+        return studentRepository.findAll().stream()
+                .filter(s -> s.getScores().containsKey(examName) && s.getScores().get(examName) > minScore)
+                .map(s -> new StudentDto(s.getId(), s.getName(), s.getScores()))
                 .toList();
-
     }
 }

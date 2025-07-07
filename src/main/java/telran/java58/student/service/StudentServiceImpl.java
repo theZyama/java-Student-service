@@ -25,7 +25,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public void addStudent(StudentCredentialsDto studentDto) {
-        if (studentRepository.findById(studentDto.getId()).isPresent()) {
+        if (studentRepository.existsById(studentDto.getId())) {
             throw new ConflictException();
         }
         Student student = modelMapper.map(studentDto, Student.class);
